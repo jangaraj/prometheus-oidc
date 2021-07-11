@@ -1,0 +1,16 @@
+# example config, see readme for explaination
+
+# env-name:
+#   step-name:
+#      # type: test-type
+#      # frequency: test-frequency
+#      # test-config: config
+
+dev:
+  discovery:
+    type: oidc-discovery
+    frequency: 30s
+    discovery-url: https://play.monitoringartist.com/auth/realms/master/.well-known/openid-configuration
+    expected-code:
+      - 200
+    expected-content: "\"issuer\":"

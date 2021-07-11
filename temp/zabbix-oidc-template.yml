@@ -1,0 +1,849 @@
+zabbix_export:
+  version: '5.2'
+  date: '2021-07-11T04:22:56Z'
+  groups:
+    -
+      name: Templates
+  templates:
+    -
+      template: 'Template Web IDP - Authentication Flows'
+      name: 'Template Web IDP - Authentication Flows'
+      groups:
+        -
+          name: Templates
+      applications:
+        -
+          name: Web
+      httptests:
+        -
+          name: 'IDP Authorization Code Flow'
+          application:
+            name: Web
+          delay: 10s
+          steps:
+            -
+              name: 'Get POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/auth?scope=openid+email+profile'
+              query_fields:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: state
+                  value: Lw==
+                -
+                  name: response_type
+                  value: code
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{execution}'
+                  value: 'regex:execution=(.*)&amp;client_id='
+                -
+                  name: '{post_url}'
+                  value: 'regex:action="(.*)" method='
+                -
+                  name: '{session_code}'
+                  value: 'regex:session_code=(.*)&amp;execution'
+                -
+                  name: '{tab_id}'
+                  value: 'regex:tab_id=(.*)" method='
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: kc-form-login
+              status_codes: '200'
+            -
+              name: 'Post POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/login-actions/authenticate'
+              query_fields:
+                -
+                  name: session_code
+                  value: '{session_code}'
+                -
+                  name: execution
+                  value: '{execution}'
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: tab_id
+                  value: '{tab_id}'
+              posts:
+                -
+                  name: credentialId
+                  value: ''
+                -
+                  name: password
+                  value: '{$IDP_PASS}'
+                -
+                  name: username
+                  value: '{$IDP_USER}'
+                -
+                  name: back
+                  value: Back
+              variables:
+                -
+                  name: '{code}'
+                  value: 'regex:location.*&code=(.*)\r'
+              follow_redirects: 'NO'
+              retrieve_mode: BOTH
+              timeout: 10s
+              required: ocation
+              status_codes: '302'
+            -
+              name: 'Exchange code'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/token'
+              posts:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: client_secret
+                  value: '{$IDP_CLIENT_SECRET}'
+                -
+                  name: grant_type
+                  value: authorization_code
+                -
+                  name: code
+                  value: '{code}'
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:"access_token":"(.*)","expires_in"'
+              headers:
+                -
+                  name: Content-Type
+                  value: application/x-www-form-urlencoded
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: access_token
+              status_codes: '200'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP Authorization Code Flow with PKCE'
+          application:
+            name: Web
+          delay: 10s
+          status: DISABLED
+          steps:
+            -
+              name: 'Get POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/auth?scope=openid+email+profile'
+              query_fields:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: state
+                  value: Lw==
+                -
+                  name: response_type
+                  value: code
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{execution}'
+                  value: 'regex:execution=(.*)&amp;client_id='
+                -
+                  name: '{post_url}'
+                  value: 'regex:action="(.*)" method='
+                -
+                  name: '{session_code}'
+                  value: 'regex:session_code=(.*)&amp;execution'
+                -
+                  name: '{tab_id}'
+                  value: 'regex:tab_id=(.*)" method='
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: kc-form-login
+              status_codes: '200'
+            -
+              name: 'Post POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/login-actions/authenticate'
+              query_fields:
+                -
+                  name: session_code
+                  value: '{session_code}'
+                -
+                  name: execution
+                  value: '{execution}'
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: tab_id
+                  value: '{tab_id}'
+              posts:
+                -
+                  name: credentialId
+                  value: ''
+                -
+                  name: password
+                  value: '{$IDP_PASS}'
+                -
+                  name: username
+                  value: '{$IDP_USER}'
+                -
+                  name: back
+                  value: Back
+              variables:
+                -
+                  name: '{code}'
+                  value: 'regex:location.*&code=(.*)\r'
+              follow_redirects: 'NO'
+              retrieve_mode: BOTH
+              timeout: 10s
+              required: ocation
+              status_codes: '302'
+            -
+              name: 'Exchange code'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/token'
+              posts:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: client_secret
+                  value: '{$IDP_CLIENT_SECRET}'
+                -
+                  name: grant_type
+                  value: authorization_code
+                -
+                  name: code
+                  value: '{code}'
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:"access_token":"(.*)","expires_in"'
+              headers:
+                -
+                  name: Content-Type
+                  value: application/x-www-form-urlencoded
+              follow_redirects: 'NO'
+              timeout: 30s
+              required: access_token
+              status_codes: '200'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 30s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP Authorization Code Flow with PKCE with PKI'
+          application:
+            name: Web
+          delay: 10s
+          status: DISABLED
+          steps:
+            -
+              name: 'Get POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/auth?scope=openid+email+profile'
+              query_fields:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: state
+                  value: Lw==
+                -
+                  name: response_type
+                  value: code
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{execution}'
+                  value: 'regex:execution=(.*)&amp;client_id='
+                -
+                  name: '{post_url}'
+                  value: 'regex:action="(.*)" method='
+                -
+                  name: '{session_code}'
+                  value: 'regex:session_code=(.*)&amp;execution'
+                -
+                  name: '{tab_id}'
+                  value: 'regex:tab_id=(.*)" method='
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: kc-form-login
+              status_codes: '200'
+            -
+              name: 'Post POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/login-actions/authenticate'
+              query_fields:
+                -
+                  name: session_code
+                  value: '{session_code}'
+                -
+                  name: execution
+                  value: '{execution}'
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: tab_id
+                  value: '{tab_id}'
+              posts:
+                -
+                  name: credentialId
+                  value: ''
+                -
+                  name: password
+                  value: '{$IDP_PASS}'
+                -
+                  name: username
+                  value: '{$IDP_USER}'
+                -
+                  name: back
+                  value: Back
+              variables:
+                -
+                  name: '{code}'
+                  value: 'regex:location.*&code=(.*)\r'
+              follow_redirects: 'NO'
+              retrieve_mode: BOTH
+              timeout: 10s
+              required: ocation
+              status_codes: '302'
+            -
+              name: 'Exchange code'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/token'
+              posts:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: client_secret
+                  value: '{$IDP_CLIENT_SECRET}'
+                -
+                  name: grant_type
+                  value: authorization_code
+                -
+                  name: code
+                  value: '{code}'
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:"access_token":"(.*)","expires_in"'
+              headers:
+                -
+                  name: Content-Type
+                  value: application/x-www-form-urlencoded
+              follow_redirects: 'NO'
+              timeout: 30s
+              required: access_token
+              status_codes: '200'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 30s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP Authorization Code Flow with PKI'
+          application:
+            name: Web
+          delay: 10s
+          status: DISABLED
+          steps:
+            -
+              name: 'Get POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/auth?scope=openid+email+profile'
+              query_fields:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: state
+                  value: Lw==
+                -
+                  name: response_type
+                  value: code
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{execution}'
+                  value: 'regex:execution=(.*)&amp;client_id='
+                -
+                  name: '{post_url}'
+                  value: 'regex:action="(.*)" method='
+                -
+                  name: '{session_code}'
+                  value: 'regex:session_code=(.*)&amp;execution'
+                -
+                  name: '{tab_id}'
+                  value: 'regex:tab_id=(.*)" method='
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: kc-form-login
+              status_codes: '200'
+            -
+              name: 'Post POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/login-actions/authenticate'
+              query_fields:
+                -
+                  name: session_code
+                  value: '{session_code}'
+                -
+                  name: execution
+                  value: '{execution}'
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: tab_id
+                  value: '{tab_id}'
+              posts:
+                -
+                  name: credentialId
+                  value: ''
+                -
+                  name: password
+                  value: '{$IDP_PASS}'
+                -
+                  name: username
+                  value: '{$IDP_USER}'
+                -
+                  name: back
+                  value: Back
+              variables:
+                -
+                  name: '{code}'
+                  value: 'regex:location.*&code=(.*)\r'
+              follow_redirects: 'NO'
+              retrieve_mode: BOTH
+              timeout: 10s
+              required: ocation
+              status_codes: '302'
+            -
+              name: 'Exchange code'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/token'
+              posts:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: client_secret
+                  value: '{$IDP_CLIENT_SECRET}'
+                -
+                  name: grant_type
+                  value: authorization_code
+                -
+                  name: code
+                  value: '{code}'
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:"access_token":"(.*)","expires_in"'
+              headers:
+                -
+                  name: Content-Type
+                  value: application/x-www-form-urlencoded
+              follow_redirects: 'NO'
+              timeout: 30s
+              required: access_token
+              status_codes: '200'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 30s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP Client Credentials Flow'
+          application:
+            name: Web
+          delay: 10s
+          steps:
+            -
+              name: 'Get token'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/token'
+              posts: 'client_id={$IDP_CLIENT_ID}&client_secret={$IDP_CLIENT_SECRET}&grant_type=client_credentials'
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:"access_token":"(.*)","expires_in"'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: access_token
+              status_codes: '200'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP Direct Grant Flow'
+          application:
+            name: Web
+          delay: 10s
+          steps:
+            -
+              name: 'Get token'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/token'
+              posts: 'scope=openid+email+profile&client_id={$IDP_CLIENT_ID}&client_secret={$IDP_CLIENT_SECRET}&grant_type=password&password={$IDP_PASS}&username={$IDP_USER}'
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:"access_token":"(.*)","expires_in"'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: access_token
+              status_codes: '200'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP Direct Grant Flow with PKI'
+          application:
+            name: Web
+          delay: 10s
+          status: DISABLED
+          steps:
+            -
+              name: 'Get token'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/token'
+              posts: 'scope=openid+email+profile&client_id={$IDP_CLIENT_ID}&client_secret={$IDP_CLIENT_SECRET}&grant_type=password&password={$IDP_PASS}&username={$IDP_USER}'
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:"access_token":"(.*)","expires_in"'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: access_token
+              status_codes: '200'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP Implicit Flow'
+          application:
+            name: Web
+          delay: 10s
+          agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:73.0) Gecko/20100101 Firefox/73.0'
+          steps:
+            -
+              name: 'Get POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/auth?scope=openid+email+profile'
+              query_fields:
+                -
+                  name: nonce
+                  value: '123456789'
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+                -
+                  name: response_type
+                  value: token
+                -
+                  name: state
+                  value: Lw==
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+              variables:
+                -
+                  name: '{execution}'
+                  value: 'regex:execution=(.*)&amp;client_id='
+                -
+                  name: '{post_url}'
+                  value: 'regex:action="(.*)" method='
+                -
+                  name: '{session_code}'
+                  value: 'regex:session_code=(.*)&amp;execution'
+                -
+                  name: '{tab_id}'
+                  value: 'regex:tab_id=(.*)" method='
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: kc-form-login
+              status_codes: '200'
+            -
+              name: 'Post POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/login-actions/authenticate'
+              query_fields:
+                -
+                  name: session_code
+                  value: '{session_code}'
+                -
+                  name: execution
+                  value: '{execution}'
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: tab_id
+                  value: '{tab_id}'
+              posts:
+                -
+                  name: credentialId
+                  value: ''
+                -
+                  name: password
+                  value: '{$IDP_PASS}'
+                -
+                  name: username
+                  value: '{$IDP_USER}'
+                -
+                  name: back
+                  value: Back
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:location.*&access_token=(.*)&token_type='
+              follow_redirects: 'NO'
+              retrieve_mode: BOTH
+              timeout: 10s
+              required: ocation
+              status_codes: '302'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP Implicit Flow with PKI'
+          application:
+            name: Web
+          delay: 10s
+          status: DISABLED
+          steps:
+            -
+              name: 'Get POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/auth?scope=openid+email+profile'
+              query_fields:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: state
+                  value: Lw==
+                -
+                  name: response_type
+                  value: code
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{execution}'
+                  value: 'regex:execution=(.*)&amp;client_id='
+                -
+                  name: '{post_url}'
+                  value: 'regex:action="(.*)" method='
+                -
+                  name: '{session_code}'
+                  value: 'regex:session_code=(.*)&amp;execution'
+                -
+                  name: '{tab_id}'
+                  value: 'regex:tab_id=(.*)" method='
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: kc-form-login
+              status_codes: '200'
+            -
+              name: 'Post POST URL'
+              url: 'https://{HOST.HOST}/auth/realms/master/login-actions/authenticate'
+              query_fields:
+                -
+                  name: session_code
+                  value: '{session_code}'
+                -
+                  name: execution
+                  value: '{execution}'
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: tab_id
+                  value: '{tab_id}'
+              posts:
+                -
+                  name: credentialId
+                  value: ''
+                -
+                  name: password
+                  value: '{$IDP_PASS}'
+                -
+                  name: username
+                  value: '{$IDP_USER}'
+                -
+                  name: back
+                  value: Back
+              variables:
+                -
+                  name: '{code}'
+                  value: 'regex:location.*&code=(.*)\r'
+              follow_redirects: 'NO'
+              retrieve_mode: BOTH
+              timeout: 10s
+              required: ocation
+              status_codes: '302'
+            -
+              name: 'Exchange code'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/token'
+              posts:
+                -
+                  name: client_id
+                  value: '{$IDP_CLIENT_ID}'
+                -
+                  name: client_secret
+                  value: '{$IDP_CLIENT_SECRET}'
+                -
+                  name: grant_type
+                  value: authorization_code
+                -
+                  name: code
+                  value: '{code}'
+                -
+                  name: redirect_uri
+                  value: 'https://domain.com/oauth/callback'
+              variables:
+                -
+                  name: '{access_token}'
+                  value: 'regex:"access_token":"(.*)","expires_in"'
+              headers:
+                -
+                  name: Content-Type
+                  value: application/x-www-form-urlencoded
+              follow_redirects: 'NO'
+              timeout: 30s
+              required: access_token
+              status_codes: '200'
+            -
+              name: 'Get userinfo'
+              url: 'https://{HOST.HOST}/auth/realms/master/protocol/openid-connect/userinfo'
+              posts:
+                -
+                  name: access_token
+                  value: '{access_token}'
+              follow_redirects: 'NO'
+              timeout: 30s
+              required: preferred_username
+              status_codes: '200'
+        -
+          name: 'IDP OIDC Discovery'
+          application:
+            name: Web
+          delay: 10s
+          steps:
+            -
+              name: 'Get OIDC discovery'
+              url: 'https://{HOST.HOST}/auth/realms/master/.well-known/openid-configuration'
+              follow_redirects: 'NO'
+              timeout: 10s
+              required: authorization_endpoint
+              status_codes: '200'
+  triggers:
+    -
+      expression: '{Template Web IDP - Authentication Flows:web.test.fail[IDP Authorization Code Flow].min(#3)}>0 and {Template Web IDP - Authentication Flows:web.test.error[IDP Authorization Code Flow].last(#1)}<>"\"\""'
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: '{Template Web IDP - Authentication Flows:web.test.fail[IDP Authorization Code Flow].min(#6)}=0'
+      name: 'Authorization Code Flow Issue'
+      priority: HIGH
+      description: 'Something is wrong, because synthetic testing of Authorization Code Flow is failing.'
+      manual_close: 'YES'
+    -
+      expression: '{Template Web IDP - Authentication Flows:web.test.fail[IDP Client Credentials Flow].min(#3)}>0 and {Template Web IDP - Authentication Flows:web.test.error[IDP Client Credentials Flow].last(#1)}<>"\"\""'
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: '{Template Web IDP - Authentication Flows:web.test.fail[IDP Client Credentials Flow].min(#6)}=0'
+      name: 'Client Credentials Flow Issue'
+      priority: HIGH
+      description: 'Something is wrong, because synthetic testing of Client Credentials Flow is failing.'
+      manual_close: 'YES'
+    -
+      expression: '{Template Web IDP - Authentication Flows:web.test.fail[IDP Direct Grant Flow].min(#3)}>0 and {Template Web IDP - Authentication Flows:web.test.error[IDP Direct Grant Flow].last(#1)}<>"\"\""'
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: '{Template Web IDP - Authentication Flows:web.test.fail[IDP Direct Grant Flow].min(#6)}=0'
+      name: 'Direct Grant Flow Issue'
+      priority: HIGH
+      description: 'Something is wrong, because synthetic testing of Direct Grant Flow is failing.'
+      manual_close: 'YES'
+    -
+      expression: '{Template Web IDP - Authentication Flows:web.test.fail[IDP Implicit Flow].min(#3)}>0 and {Template Web IDP - Authentication Flows:web.test.error[IDP Implicit Flow].last(#1)}<>"\"\""'
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: '{Template Web IDP - Authentication Flows:web.test.fail[IDP Implicit Flow].min(#6)}=0'
+      name: 'Implicit Flow Issue'
+      priority: HIGH
+      description: 'Something is wrong, because synthetic testing of Implicit Flow is failing.'
+      manual_close: 'YES'
+    -
+      expression: '{Template Web IDP - Authentication Flows:web.test.time[IDP Authorization Code Flow,Exchange code,resp].avg(#3)}>1000'
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: '{Template Web IDP - Authentication Flows:web.test.time[IDP Authorization Code Flow,Exchange code,resp].avg(#6)}<1000'
+      name: 'Slow code to token exchange'
+      priority: HIGH
+      description: 'Code to token exchange should be less than 1 second. Maybe problem with LDAP/DB/EKS cluster performance.'
